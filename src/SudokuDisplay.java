@@ -9,9 +9,10 @@ public class SudokuDisplay {
     public int row;
     public int column;
     private int value;
+    private int[] psblvalues;
 
 
-    public SudokuDisplay (int x, int y, int size, int row, int column,int value){
+    public SudokuDisplay (int x, int y, int size, int row, int column,int value, int[] psblvalues){
         super();
         this.x = x;
         this.y = y;
@@ -19,6 +20,7 @@ public class SudokuDisplay {
         this.row = row;
         this.column = column;
         this.value = value;
+        this.psblvalues = psblvalues;
     }
     /*
      * applyRules makes the rules be applied to each cell. In Main, it is called to iterate over each cell, so their rules are followed.
@@ -46,11 +48,7 @@ public class SudokuDisplay {
         Main.app.noFill();
     }
 
-    /*
-     * toggles cell states when cell is pressed
-     */
-    public void handleClick(){
-
+    public void removePsbl(int index){
     }
 
     /*

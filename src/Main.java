@@ -5,7 +5,6 @@ public class Main extends PApplet {
     //adding comment so i can commit
     public static Main app;
     private SudokuDisplay[][] dis;
-    private Solver[][] solve;
     private int disSize = 100;
     public boolean editing = false;
     private int a;
@@ -67,10 +66,8 @@ public class Main extends PApplet {
         for(int row = 0; row < dis.length; row++){
             for(int column = 0; column < dis[row].length; column++){
                 //CellState s = CellState.DEAD;
-                SudokuDisplay c = new SudokuDisplay(200+column * disSize, 200+row * disSize, disSize, row, column,0);
+                SudokuDisplay c = new SudokuDisplay(200+column * disSize, 200+row * disSize, disSize, row, column,0,new int[] {1,2,3,4});
                 dis[row][column] = c;
-
-
             }
         }
     }
@@ -134,6 +131,22 @@ public class Main extends PApplet {
         }
     }
 
+    public void updateUserMatrix(int row, int col){ //pass the INDEX of row and column of the value from the sudoku that we're guessing/just found/want to update userMatrix with
+        int c = 4 * row + col; //going for the index of the column in userMatrix recall
+        //ex. row 2 and col 2 is third element in third row of sudoku, where c should be 10
+        int sudokuValue = dis[row][col].getValue(); //value of the block in the user sudoku that corresponds to column c in userMatrix
+        if(sudokuValue != 0){ //if it was given by the user
+            for(int r = 0; r < 12; r++){ //iterate through the rows of this chosen column
+                if(userMatrix[r][c] != 0) { //if in this row, this variable is part of the relationship
+                    userMatrix[r][16] = userMatrix[r][16] - sudokuValue; //subtract known value from original total
+                }
+                userMatrix[r][c] = 0; //set this relationship to nothing in either case bc we alr know it, we don't need to solve for it
+            }
+        }
+    }
+
+
+
 
     public void mouseClicked() {
         if(mouseY >= 200 && mouseX>=200 && mouseY <= 600 && mouseX<=600 && done == false) {
@@ -167,6 +180,8 @@ public class Main extends PApplet {
                 }
                 System.out.println();
             }
+        } else if(key == 's'){
+            solve();
         } else if (ascii == 100){
             input = 0;
         } else if (key =='e'){
@@ -302,5 +317,85 @@ public class Main extends PApplet {
                 System.out.println("ERROR");
 
         }
+    }
+
+    public void solve(){
+        rref(userMatrix);
+        System.out.println("userMatrix is:   ");
+        /*
+        for(int[] rows: userMatrix){ //printing the array into console, mostly for scaffolding
+            System.out.print("{");
+            for(int value: rows){
+                System.out.print(value + ", ");
+            }
+            System.out.print("},");
+        }
+
+         */
+
+        for(int[] rows: userMatrix){ //printing the array into console, mostly for scaffolding
+            for(int value: rows){
+                System.out.print(value + " ");
+            }
+            System.out.println();
+        }
+
+
+
+
+    }
+
+
+
+
+
+
+    public static void rref(int[][] matrix) {
+        int lead = 0;
+        int rowCount = matrix.length;
+        int colCount = matrix[0].length;
+
+        for (int r = 0; r < rowCount; r++) {
+            if (lead >= colCount) {
+                return;
+            }
+            int i = r;
+            while (matrix[i][lead] == 0) {
+                i++;
+                if (i == rowCount) {
+                    i = r;
+                    lead++;
+                    if (lead == colCount) {
+                        return;
+                    }
+                }
+            }
+
+            swapRows(matrix, i, r);
+
+            if (matrix[r][lead] != 0) {
+                double divisor = matrix[r][lead];
+                for (int j = 0; j < colCount; j++) {
+                    matrix[r][j] /= divisor;
+                }
+            }
+
+            for (int i2 = 0; i2 < rowCount; i2++) {
+                if (i2 != r) {
+                    double factor = matrix[i2][lead];
+                    for (int j = 0; j < colCount; j++) {
+                        matrix[i2][j] -= factor * matrix[r][j];
+                    }
+                }
+            }
+
+            lead++;
+        }
+    }
+
+    public static void swapRows(int[][] matrix, int row1, int row2) {
+        int[] temp = matrix[row1];
+        matrix[row1] = matrix[row2];
+        matrix[row2] = temp;
     }
 }
