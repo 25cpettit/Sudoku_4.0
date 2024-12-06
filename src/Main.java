@@ -1,4 +1,3 @@
-//import processing.core.PApplet;
 import processing.core.PApplet;
 import java.util.Random;
 
@@ -16,8 +15,26 @@ public class Main extends PApplet {
     private int editX;
     private int editY;
     private boolean error = false;
+    private boolean done = false;
 
     private int bit7, bit6, bit5, bit4, bit3, bit2, bit1, bit0;
+
+    private final int[][] genMatrix = { //for reference
+            {1,1,1,1, 0,0,0,0,0,0,0,0,0,0,0,0,10},
+            {0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,10},
+            {0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,10},
+            {0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,10},
+            {1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,10},
+            {0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,10},
+            {0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,10},
+            {0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,10},
+            {1,1,0,0,1,1,0,0,0,0,0,0,0,0,0,0,10},
+            {0,0,1,1,0,0,1,1,0,0,0,0,0,0,0,0,10},
+            {0,0,0,0,0,0,0,0,1,1,0,0,1,1,0,0,10},
+            {0,0,0,0,0,0,0,0,0,0,1,1,0,0,1,1,10},
+    };
+
+    private int[][] userMatrix = genMatrix; //for use per user array
 
 
     public static void main(String[] args) {
@@ -88,9 +105,38 @@ public class Main extends PApplet {
         }
     }
 
+    public void makeUserMatrix(){
+        /*runs when user finishes sudoku.
+
+        takes userArray, which is presently equivalent to og genMatrix, and for every column
+        that corresponds to a known value in the user-inputted array, that variable/column in
+        the userMatrix is changed to 0 so that we don't have to solve for it in relationships.
+        To keep those relationships/rows accurate, we delete the known value from the sum of each row.
+
+        can go into draw with a boolean instead, but we only want this to run once so better as a method
+
+         */
+        for(int c = 0; c < 16; c++) {
+            //int sudokuValue = dis[rowInSudoku][colInSudoku].getValue();
+            int sudokuValue = dis[c/4][c - 4 * (c/4)].getValue(); //value of the block in the user sudoku that corresponds to column c in userMatrix
+                //first row first col, c=0, row=0, col=0
+                //first row last col, c=3, row=0, col=3
+                //second row third col, c=6, row=1, col=2
+                //last row last col, c=15, row=3, col=3
+            if(sudokuValue != 0){ //if it was given by the user
+                for(int r = 0; r < 12; r++){ //iterate through the rows of this chosen column
+                    if(userMatrix[r][c] != 0) { //if in this row, this variable is part of the relationship
+                        userMatrix[r][16] = userMatrix[r][16] - sudokuValue; //subtract known value from original total
+                    }
+                    userMatrix[r][c] = 0; //set this relationship to nothing in either case bc we alr know it, we don't need to solve for it
+                }
+            }
+        }
+    }
+
 
     public void mouseClicked() {
-        if(mouseY >= 200 && mouseX>=200 && mouseY <= 600 && mouseX<=600) {
+        if(mouseY >= 200 && mouseX>=200 && mouseY <= 600 && mouseX<=600 && done == false) {
             a = mouseX;
             b = mouseY;
             editing = true;
@@ -98,20 +144,29 @@ public class Main extends PApplet {
         }
     }
 
-    public void takeUserInput(){
-    }
-
 
     public void keyPressed() {
         char k = key;
         int ascii = k;
-        if(ascii<=52 && ascii>=49){
-            input = ascii-48;
-            if((input*10)%10 > 4){
-                input = (input*10-(input*10)%10)/10;
+        if(ascii<=52 && ascii>=49){ //if number 1,2,3,4
+            input = ascii-48; //transforms to 1,2,3,4
+            if((input*10)%10 > 4){ //if what?? if the user presses something with a fraction??
+                input = (input*10-(input*10)%10)/10; //literally what is going on
                 System.out.println("Error, does not work");
             }
             System.out.println(input);
+        } else if(key == 'p'){//p for finishing the sudoku entering just because
+            editing = false; //in case the user has clicked a value but hasn't entered e
+            input = 0; //just to be clean
+            done = true; //only time this is set to true. never set to false again. so that user can't click on sudoku and edit while solving
+            makeUserMatrix();
+            System.out.println("userMatrix is:   ");
+            for(int[] rows: userMatrix){ //printing the array into console, mostly for scaffolding
+                for(int value: rows){
+                    System.out.print(value + " ");
+                }
+                System.out.println();
+            }
         } else if (ascii == 100){
             input = 0;
         } else if (key =='e'){
