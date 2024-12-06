@@ -1,3 +1,4 @@
+//import processing.core.PApplet;
 import processing.core.PApplet;
 import java.util.Random;
 
@@ -48,7 +49,7 @@ public class Main extends PApplet {
         dis = new SudokuDisplay[4][4];
         for(int row = 0; row < dis.length; row++){
             for(int column = 0; column < dis[row].length; column++){
-                CellState s = CellState.DEAD;
+                //CellState s = CellState.DEAD;
                 SudokuDisplay c = new SudokuDisplay(200+column * disSize, 200+row * disSize, disSize, row, column,0);
                 dis[row][column] = c;
 
@@ -239,13 +240,12 @@ public class Main extends PApplet {
                 input = 0;
             }
         } else {
-            if(input != 0) {
                 fill(255, 0, 0);
                 text("ERROR NOT VALID INPUT", 400, 650);
                 fill(0);
                 System.out.println(ascii);
                 System.out.println("ERROR");
-            }
+
         }
     }
 }
