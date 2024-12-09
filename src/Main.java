@@ -179,7 +179,7 @@ public class Main extends PApplet {
     public void keyPressed() {
         char k = key;
         int ascii = k;
-        if (ascii <= 52 && ascii >= 49) { //if number 1,2,3,4
+        if (ascii <= 52 && ascii >= 49 && editing) { //if number 1,2,3,4
             input = ascii - 48; //transforms to 1,2,3,4
             if ((input * 10) % 10 > 4) { //if what?? if the user presses something with a fraction??
                 input = (input * 10 - (input * 10) % 10) / 10; //literally what is going on
@@ -228,7 +228,7 @@ public class Main extends PApplet {
             solve();
         } else if (ascii == 100){
             input = 0;
-        } else if (key =='e'){
+        } else if (key =='e' && editing){
             for(int r = 0; r <4; r++){
                 if(dis[r][editY-1].getValue() == input && r!= editX-1  && input != 0){
                     fill(255,0,0);
@@ -350,40 +350,7 @@ public class Main extends PApplet {
                 input = 0;
                 error = false;
             } else {
-                dis[editX - 1][editY - 1].setPsbl(new ArrayList<>(Arrays.asList(input))); //sets the only poss of this defined block as the input given
-
-                for(int i = 0; i < 4; i++) { //iterate through this row of editX-1 index where i is the column which changes
-                    if(i != editY - 1){ //if it's not the same block as this one being changed
-                        dis[editX - 1][i].getPsbl().remove(Integer.valueOf(input)); //if the possible values includes the input, remove it
-                    }
-                }
-
-                for(int i = 0; i < 4; i++) { //iterate through this column of editY-1 index where i is the column which changes
-                    if(i != editX - 1){
-                        dis[i][editY - 1].getPsbl().remove(Integer.valueOf(input));
-                    }
-                }
-
-                int groupRow = (editX - 1)/2; //first two are first half, last two are second half
-                int groupCol = (editY - 1)/2; //first two are first half, last two are second half
-
-                for(int i = 0; i < 2; i++){ //each row of potential groups
-                    for(int j = 0; j < 2; j++) { //each col of potential groups
-                        if (2 * groupRow + i != editX - 1 || 2 * groupCol + j != editY - 1){
-                            dis[2 * groupRow + i][2 * groupCol + j].getPsbl().remove(Integer.valueOf(input));
-                        }
-                    }
-                }
-
-                for(int i = 0; i < 4; i++){ //printing the arraylists into console, mostly for scaffolding
-                    for(int j = 0; j < 4; j++){
-                        System.out.print(dis[i][j].getPsbl() + "    ");
-                    }
-                    System.out.println();
-                }
-
-                editing = false;
-                input = 0;
+                update(editX-1, editY-1); //bc input editX and editY are all public variables we can make this a method
             }
         } else {
                 fill(255, 0, 0);
@@ -397,7 +364,7 @@ public class Main extends PApplet {
     public void test(){ //make sure to run test every step of solve bc it's not that smart
         for(int i = 0; i < 4; i++){
             for(int j = 0; j < 4; j++){
-                if(dis[i][j].getPsbl().size() == 0){ //if this block has no possible values
+                if(dis[i][j].getPsbl().isEmpty()){ //if this block has no possible values
                     gottaReset = true;
                     wrongRow = i;
                     wrongCol = j;
@@ -412,6 +379,17 @@ public class Main extends PApplet {
         rref(userMatrix);
         System.out.println("userMatrix is:   ");
 
+        /*
+        for(int row = 0; row < dis.length; row++) {
+            for (int column = 0; column < dis[row].length; column++) {
+                if(dis[row][column].getPsbl().size() == 1){
+                    input = dis[row][column].getPsbl().get(0);
+                    dis[row][column].setValue(input);
+                    update(row, column);
+                }
+            }
+        }
+         */
 
         for(int[] rows: userMatrix){ //printing the array into console, mostly for scaffolding
             for(int value: rows){
@@ -419,11 +397,57 @@ public class Main extends PApplet {
             }
             System.out.println();
         }
+        //using UserDisplay
+        for(int r = 0; r < 12; r++){
+            int nonZeroCounter = 0;
+            int nonZeroColumn=0;
+            for(int c = 0; c < 16; c++){
+                if(userMatrix[r][c] != 0){
+                    nonZeroCounter++;
+                    nonZeroColumn = c;
+                }
+            }
+            if(nonZeroCounter == 1){
+                dis[(nonZeroColumn)/4][nonZeroColumn%4].setValue(userMatrix[r][16]);
+                System.out.println("(" + (nonZeroColumn)/4 + "," + nonZeroColumn%4 + ")");
+            }
+        }
 
+        }
+
+    public void update(int x, int y){
+
+        for(int i = 0; i < 4; i++) { //iterate through this row of editX-1 index where i is the column which changes
+            dis[x][i].getPsbl().remove(Integer.valueOf(input)); //if the possible values includes the input, remove it
+        }
+
+        for(int i = 0; i < 4; i++) { //iterate through this column of editY-1 index where i is the column which changes
+            dis[i][y].getPsbl().remove(Integer.valueOf(input));
+        }
+
+        int groupRow = (x)/2; //first two are first half, last two are second half
+        int groupCol = (y)/2; //first two are first half, last two are second half
+
+        for(int i = 0; i < 2; i++){ //each row of potential groups
+            for(int j = 0; j < 2; j++) { //each col of potential groups
+                dis[2 * groupRow + i][2 * groupCol + j].getPsbl().remove(Integer.valueOf(input));
+            }
+        }
+
+        dis[x][y].setPsbl(new ArrayList<>(Arrays.asList(input))); //sets the only poss of this defined block as the input given
+
+
+        for(int i = 0; i < 4; i++){ //printing the arraylists into console, mostly for scaffolding
+            for(int j = 0; j < 4; j++){
+                System.out.print(dis[i][j].getPsbl() + "    ");
+            }
+            System.out.println();
+        }
+
+
+        editing = false;
+        input = 0;
     }
-
-
-
 
 
 
