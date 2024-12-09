@@ -1,5 +1,8 @@
 import processing.core.PApplet;
+
+import java.util.Arrays;
 import java.util.Random;
+import java.util.ArrayList;
 
 public class Main extends PApplet {
     //adding comment so i can commit
@@ -7,6 +10,9 @@ public class Main extends PApplet {
     private SudokuDisplay[][] dis;
     private int disSize = 100;
     public boolean editing = false;
+    public boolean gottaReset = false;
+    private int wrongRow;
+    private int wrongCol;
     private int a;
     private int b;
     private String strValue = "";
@@ -34,6 +40,7 @@ public class Main extends PApplet {
     };
 
     private int[][] userMatrix = genMatrix; //for use per user array
+    //private ArrayList<Integer> thereAreFour = new ArrayList<>(Arrays.asList(1,2,3,4));
 
 
     public static void main(String[] args) {
@@ -66,7 +73,7 @@ public class Main extends PApplet {
         for(int row = 0; row < dis.length; row++){
             for(int column = 0; column < dis[row].length; column++){
                 //CellState s = CellState.DEAD;
-                SudokuDisplay c = new SudokuDisplay(200+column * disSize, 200+row * disSize, disSize, row, column,0,new int[] {1,2,3,4});
+                SudokuDisplay c = new SudokuDisplay(200+column * disSize, 200+row * disSize, disSize, row, column,0,new ArrayList<>(Arrays.asList(1,2,3,4)));
                 dis[row][column] = c;
             }
         }
@@ -92,13 +99,24 @@ public class Main extends PApplet {
         }
         if(editing){
             fill(0,0,0);
-            textSize(50);
+            textSize(40);
             textAlign(CENTER, CENTER);
-            editX = dis[(b - 200) / disSize][(a-200) / disSize].row +1;
+            editX = dis[(b - 200) / disSize][(a-200) / disSize].row + 1;
             editY = dis[(b - 200) / disSize][(a-200) / disSize].column + 1;
-            text("Enter a number from 1 to 4 for (" + editX +", " + editY + "):",400 ,700);
+            text("Enter a number from 1 to 4 for (" + editX +", " + editY + "):",400 ,660);
+            text("Press e to enter, p to finish, s to solve",400 ,720);
             noFill();
             dis[(b - 200) / disSize][(a-200) / disSize].setValue(input);
+        }
+
+        if(gottaReset){
+            fill(0,0,0);
+            textSize(30);
+            textAlign(CENTER, CENTER);
+            text("Oops! This sudoku is unsolvable.", 400 ,660);
+            text("For example, row " + (wrongRow + 1) + " column " + (wrongCol + 1) + " has no possible value", 400 ,710);
+            text("Press r to restart", 400 ,760);
+            noFill();
         }
     }
 
@@ -149,7 +167,7 @@ public class Main extends PApplet {
 
 
     public void mouseClicked() {
-        if(mouseY >= 200 && mouseX>=200 && mouseY <= 600 && mouseX<=600 && done == false) {
+        if(mouseY >= 200 && mouseX>=200 && mouseY <= 600 && mouseX<=600 && done == false && input == 0) {
             a = mouseX;
             b = mouseY;
             editing = true;
@@ -161,25 +179,51 @@ public class Main extends PApplet {
     public void keyPressed() {
         char k = key;
         int ascii = k;
-        if(ascii<=52 && ascii>=49){ //if number 1,2,3,4
-            input = ascii-48; //transforms to 1,2,3,4
-            if((input*10)%10 > 4){ //if what?? if the user presses something with a fraction??
-                input = (input*10-(input*10)%10)/10; //literally what is going on
+        if (ascii <= 52 && ascii >= 49) { //if number 1,2,3,4
+            input = ascii - 48; //transforms to 1,2,3,4
+            if ((input * 10) % 10 > 4) { //if what?? if the user presses something with a fraction??
+                input = (input * 10 - (input * 10) % 10) / 10; //literally what is going on
                 System.out.println("Error, does not work");
             }
             System.out.println(input);
-        } else if(key == 'p'){//p for finishing the sudoku entering just because
+        } else if (key == 'p') {//p for finishing the sudoku entering just because
+            test();
             editing = false; //in case the user has clicked a value but hasn't entered e
             input = 0; //just to be clean
             done = true; //only time this is set to true. never set to false again. so that user can't click on sudoku and edit while solving
             makeUserMatrix();
             System.out.println("userMatrix is:   ");
-            for(int[] rows: userMatrix){ //printing the array into console, mostly for scaffolding
-                for(int value: rows){
+            for (int[] rows : userMatrix) { //printing the array into console, mostly for scaffolding
+                for (int value : rows) {
                     System.out.print(value + " ");
                 }
                 System.out.println();
             }
+        } else if(key == 'r'){
+            userMatrix = genMatrix; //reset userMatrix
+            dis = new SudokuDisplay[4][4]; //redefine dis
+            for(int row = 0; row < dis.length; row++){
+                for(int column = 0; column < dis[row].length; column++){
+                    //CellState s = CellState.DEAD;
+                    SudokuDisplay c = new SudokuDisplay(200+column * disSize, 200+row * disSize, disSize, row, column,0,new ArrayList<>(Arrays.asList(1,2,3,4)));
+                    dis[row][column] = c;
+                }
+            }
+            input = 0;
+            editing = false;
+            done = false;
+            editX = 0;
+            editY = 0;
+            gottaReset = false;
+
+            fill(162, 205, 224);
+            rect(0,600,800,800);
+
+            fill(0,0,0);
+            textSize(30);
+            textAlign(CENTER, CENTER);
+            text("Oops! This sudoku is unsolvable.", 400 ,700);
+            noFill();
         } else if(key == 's'){
             solve();
         } else if (ascii == 100){
@@ -306,6 +350,38 @@ public class Main extends PApplet {
                 input = 0;
                 error = false;
             } else {
+                dis[editX - 1][editY - 1].setPsbl(new ArrayList<>(Arrays.asList(input))); //sets the only poss of this defined block as the input given
+
+                for(int i = 0; i < 4; i++) { //iterate through this row of editX-1 index where i is the column which changes
+                    if(i != editY - 1){ //if it's not the same block as this one being changed
+                        dis[editX - 1][i].getPsbl().remove(Integer.valueOf(input)); //if the possible values includes the input, remove it
+                    }
+                }
+
+                for(int i = 0; i < 4; i++) { //iterate through this column of editY-1 index where i is the column which changes
+                    if(i != editX - 1){
+                        dis[i][editY - 1].getPsbl().remove(Integer.valueOf(input));
+                    }
+                }
+
+                int groupRow = (editX - 1)/2; //first two are first half, last two are second half
+                int groupCol = (editY - 1)/2; //first two are first half, last two are second half
+
+                for(int i = 0; i < 2; i++){ //each row of potential groups
+                    for(int j = 0; j < 2; j++) { //each col of potential groups
+                        if (2 * groupRow + i != editX - 1 || 2 * groupCol + j != editY - 1){
+                            dis[2 * groupRow + i][2 * groupCol + j].getPsbl().remove(Integer.valueOf(input));
+                        }
+                    }
+                }
+
+                for(int i = 0; i < 4; i++){ //printing the arraylists into console, mostly for scaffolding
+                    for(int j = 0; j < 4; j++){
+                        System.out.print(dis[i][j].getPsbl() + "    ");
+                    }
+                    System.out.println();
+                }
+
                 editing = false;
                 input = 0;
             }
@@ -315,23 +391,27 @@ public class Main extends PApplet {
                 fill(0);
                 System.out.println(ascii);
                 System.out.println("ERROR");
-
         }
     }
 
-    public void solve(){
+    public void test(){ //make sure to run test every step of solve bc it's not that smart
+        for(int i = 0; i < 4; i++){
+            for(int j = 0; j < 4; j++){
+                if(dis[i][j].getPsbl().size() == 0){ //if this block has no possible values
+                    gottaReset = true;
+                    wrongRow = i;
+                    wrongCol = j;
+                }
+            }
+        }
+    }
+
+
+
+    public void solve(){ //right now just rref's
         rref(userMatrix);
         System.out.println("userMatrix is:   ");
-        /*
-        for(int[] rows: userMatrix){ //printing the array into console, mostly for scaffolding
-            System.out.print("{");
-            for(int value: rows){
-                System.out.print(value + ", ");
-            }
-            System.out.print("},");
-        }
 
-         */
 
         for(int[] rows: userMatrix){ //printing the array into console, mostly for scaffolding
             for(int value: rows){
@@ -339,9 +419,6 @@ public class Main extends PApplet {
             }
             System.out.println();
         }
-
-
-
 
     }
 

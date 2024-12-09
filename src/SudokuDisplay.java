@@ -1,3 +1,5 @@
+import java.util.ArrayList;
+
 /*
  * The purpose of the Cell class is to define each cell and make sure they follow the rules that are provided for them
  */
@@ -9,10 +11,10 @@ public class SudokuDisplay {
     public int row;
     public int column;
     private int value;
-    private int[] psblvalues;
+    private ArrayList<Integer> psblValues;
 
 
-    public SudokuDisplay (int x, int y, int size, int row, int column,int value, int[] psblvalues){
+    public SudokuDisplay (int x, int y, int size, int row, int column,int value, ArrayList<Integer> psblValues){
         super();
         this.x = x;
         this.y = y;
@@ -20,7 +22,7 @@ public class SudokuDisplay {
         this.row = row;
         this.column = column;
         this.value = value;
-        this.psblvalues = psblvalues;
+        this.psblValues = psblValues;
     }
     /*
      * applyRules makes the rules be applied to each cell. In Main, it is called to iterate over each cell, so their rules are followed.
@@ -48,7 +50,16 @@ public class SudokuDisplay {
         Main.app.noFill();
     }
 
-    public void removePsbl(int index){
+    public void setPsbl(ArrayList<Integer> newPsbl){
+        psblValues = newPsbl;
+    }
+
+    public ArrayList<Integer> getPsbl(){
+        return psblValues;
+    }
+
+    public void sizePsbl(){
+        psblValues.size();
     }
 
     /*
