@@ -409,6 +409,7 @@ public class Main extends PApplet {
             }
             if(nonZeroCounter == 1){
                 dis[(nonZeroColumn)/4][nonZeroColumn%4].setValue(userMatrix[r][16]);
+                updateUserMatrix((nonZeroColumn)/4,nonZeroColumn%4);
                 System.out.println("(" + (nonZeroColumn)/4 + "," + nonZeroColumn%4 + ")");
             }
         }
