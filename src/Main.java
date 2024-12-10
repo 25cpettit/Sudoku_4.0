@@ -11,8 +11,6 @@ public class Main extends PApplet {
     private int disSize = 100;
     public boolean editing = false;
     public boolean gottaReset = false;
-    private int wrongRow;
-    private int wrongCol;
     private int a;
     private int b;
     private String strValue = "";
@@ -104,18 +102,16 @@ public class Main extends PApplet {
             editX = dis[(b - 200) / disSize][(a-200) / disSize].row + 1;
             editY = dis[(b - 200) / disSize][(a-200) / disSize].column + 1;
             text("Enter a number from 1 to 4 for (" + editX +", " + editY + "):",400 ,660);
-            text("Press e to enter, p to finish, s to solve",400 ,720);
+            text("Press e to enter and s to solve when you're done",400 ,720);
             noFill();
             dis[(b - 200) / disSize][(a-200) / disSize].setValue(input);
         }
 
         if(gottaReset){
             fill(0,0,0);
-            textSize(30);
+            textSize(40);
             textAlign(CENTER, CENTER);
-            text("Oops! This sudoku is unsolvable.", 400 ,660);
-            text("For example, row " + (wrongRow + 1) + " column " + (wrongCol + 1) + " has no possible value", 400 ,710);
-            text("Press r to restart", 400 ,760);
+            text("Oops! This sudoku is unsolvable.", 400 ,700);
             noFill();
         }
     }
@@ -161,13 +157,14 @@ public class Main extends PApplet {
                 userMatrix[r][c] = 0; //set this relationship to nothing in either case bc we alr know it, we don't need to solve for it
             }
         }
+        rref(userMatrix);
     }
 
 
 
 
     public void mouseClicked() {
-        if(mouseY >= 200 && mouseX>=200 && mouseY <= 600 && mouseX<=600 && done == false && input == 0) {
+        if(mouseY >= 200 && mouseX>=200 && mouseY <= 600 && mouseX<=600 && input == 0) {
             a = mouseX;
             b = mouseY;
             editing = true;
@@ -186,25 +183,11 @@ public class Main extends PApplet {
                 System.out.println("Error, does not work");
             }
             System.out.println(input);
-        } else if (key == 'p') {//p for finishing the sudoku entering just because
-            test();
-            editing = false; //in case the user has clicked a value but hasn't entered e
-            input = 0; //just to be clean
-            done = true; //only time this is set to true. never set to false again. so that user can't click on sudoku and edit while solving
-            makeUserMatrix();
-            System.out.println("userMatrix is:   ");
-            for (int[] rows : userMatrix) { //printing the array into console, mostly for scaffolding
-                for (int value : rows) {
-                    System.out.print(value + " ");
-                }
-                System.out.println();
-            }
         } else if(key == 'r'){
             userMatrix = genMatrix; //reset userMatrix
             dis = new SudokuDisplay[4][4]; //redefine dis
             for(int row = 0; row < dis.length; row++){
                 for(int column = 0; column < dis[row].length; column++){
-                    //CellState s = CellState.DEAD;
                     SudokuDisplay c = new SudokuDisplay(200+column * disSize, 200+row * disSize, disSize, row, column,0,new ArrayList<>(Arrays.asList(1,2,3,4)));
                     dis[row][column] = c;
                 }
@@ -225,6 +208,10 @@ public class Main extends PApplet {
             text("Oops! This sudoku is unsolvable.", 400 ,700);
             noFill();
         } else if(key == 's'){
+            editing = false; //in case the user has clicked a value but hasn't entered e
+            input = 0; //just to be clean
+            done = true; //only time this is set to true. never set to false again. so that user can't click on sudoku and edit while solving
+            makeUserMatrix();
             solve();
         } else if (ascii == 100){
             input = 0;
@@ -361,23 +348,17 @@ public class Main extends PApplet {
         }
     }
 
-    public void test(){ //make sure to run test every step of solve bc it's not that smart
-        for(int i = 0; i < 4; i++){
+
+    public void solve(){
+        rref(userMatrix); //just in case
+
+        for(int i = 0; i < 4; i++){ //old test--> if any blocks have no possible values
             for(int j = 0; j < 4; j++){
                 if(dis[i][j].getPsbl().isEmpty()){ //if this block has no possible values
                     gottaReset = true;
-                    wrongRow = i;
-                    wrongCol = j;
                 }
             }
         }
-    }
-
-
-
-    public void solve(){ //right now just rref's
-        rref(userMatrix);
-        System.out.println("userMatrix is:   ");
 
         /*
         for(int row = 0; row < dis.length; row++) {
@@ -391,12 +372,17 @@ public class Main extends PApplet {
         }
          */
 
+        System.out.println();
         for(int[] rows: userMatrix){ //printing the array into console, mostly for scaffolding
             for(int value: rows){
                 System.out.print(value + " ");
             }
             System.out.println();
         }
+        System.out.println();
+        System.out.println();
+
+
         //using UserDisplay
         for(int r = 0; r < 12; r++){
             int nonZeroCounter = 0;
@@ -408,22 +394,46 @@ public class Main extends PApplet {
                 }
             }
             if(nonZeroCounter == 1){
-                dis[(nonZeroColumn)/4][nonZeroColumn%4].setValue(userMatrix[r][16]);
-                updateUserMatrix((nonZeroColumn)/4,nonZeroColumn%4);
-                System.out.println("(" + (nonZeroColumn)/4 + "," + nonZeroColumn%4 + ")");
+                if(userMatrix[r][16] != 0){ //if the sum is nonzero
+                    dis[nonZeroColumn / 4][nonZeroColumn % 4].setValue(userMatrix[r][16]);
+                    System.out.println("(" + (nonZeroColumn) / 4 + "," + nonZeroColumn % 4 + ") as " + userMatrix[r][16]);
+                    input = userMatrix[r][16];
+                    System.out.println(input);
+                    update((nonZeroColumn) / 4, nonZeroColumn % 4);
+                    input = 0;
+                    makeUserMatrix();
+                    rref(userMatrix);
+                    //updateUserMatrix((nonZeroColumn) / 4, nonZeroColumn % 4);
+                } else { //if the sum is zero
+                    gottaReset = true;
+                }
             }
         }
 
+        System.out.println();
+        for(int i = 0; i < 4; i++){ //printing the arraylists into console, mostly for scaffolding
+            for(int j = 0; j < 4; j++){
+                System.out.print(dis[i][j].getPsbl() + "    ");
+            }
+            System.out.println();
         }
+    }
+
+    public void guess(){
+
+    }
 
     public void update(int x, int y){
-
         for(int i = 0; i < 4; i++) { //iterate through this row of editX-1 index where i is the column which changes
-            dis[x][i].getPsbl().remove(Integer.valueOf(input)); //if the possible values includes the input, remove it
+            if(dis[x][i].getValue() == 0) {
+                dis[x][i].getPsbl().remove(Integer.valueOf(input)); //if the possible values includes the input, remove it
+            }
         }
 
         for(int i = 0; i < 4; i++) { //iterate through this column of editY-1 index where i is the column which changes
-            dis[i][y].getPsbl().remove(Integer.valueOf(input));
+            if(dis[i][y].getValue() == 0) {
+                dis[i][y].getPsbl().remove(Integer.valueOf(input));
+            }
         }
 
         int groupRow = (x)/2; //first two are first half, last two are second half
@@ -431,13 +441,16 @@ public class Main extends PApplet {
 
         for(int i = 0; i < 2; i++){ //each row of potential groups
             for(int j = 0; j < 2; j++) { //each col of potential groups
-                dis[2 * groupRow + i][2 * groupCol + j].getPsbl().remove(Integer.valueOf(input));
+                if(dis[2 * groupRow + i][2 * groupCol + j].getValue() == 0) {
+                    dis[2 * groupRow + i][2 * groupCol + j].getPsbl().remove(Integer.valueOf(input));
+                }
             }
         }
 
         dis[x][y].setPsbl(new ArrayList<>(Arrays.asList(input))); //sets the only poss of this defined block as the input given
 
 
+        System.out.println();
         for(int i = 0; i < 4; i++){ //printing the arraylists into console, mostly for scaffolding
             for(int j = 0; j < 4; j++){
                 System.out.print(dis[i][j].getPsbl() + "    ");
